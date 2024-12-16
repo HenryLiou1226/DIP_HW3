@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-name = 'test'
+name = 'test5'
 sign = cv2.imread('sign.png', cv2.IMREAD_UNCHANGED)
 image = cv2.imread(f'{name}.png')
 def canny_edge_detector(image): 
@@ -36,8 +36,8 @@ def canny_edge_detector(image):
                     temp_image[i, j] = image[i, j]
     image = temp_image
     # 雙門檻和連通成份分析 thresholding low 100 high 200
-    low =  20
-    high = 60
+    low =  60
+    high = 120
     # 連通成份分析
     queue = deque()
     # 紀錄強像素
@@ -73,33 +73,33 @@ def hough_lines(img,threshold):
     # p的最長值為最長邊長根號2 cos(45) + sin(45) = 1/根號2
     p = int(max(height, width) * np.sqrt(2))
 
-    # rho範圍為-p到p，θ範圍為-90到90
+    # rho範圍為-p到p，θ範圍為0到180
     max_rho = p
-    max_theta = 90
+    max_theta = 180
 
     # 紀錄ρθ平面的累加器
-    accumulator = np.zeros((2 * max_rho, 2 * max_theta))
+    accumulator = np.zeros((2 * max_rho, max_theta + 1))
 
     # 掃x,y平面，不為零的線畫-90 < ϴ < 90的線，記錄到ρθ平面的點
     for x in range(height):
         for y in range(width):
             if img[x][y] > 0:
                 # 若x,y平面為線，轉換到ρθ平面的點 -90 < ϴ < 90
-                for t in range(-max_theta, max_theta):
-                    r = int(y * np.cos(np.deg2rad(t)) + x * np.sin(np.deg2rad(t)))
+                for t in range(0, max_theta + 1):
+                    r = int(y * np.sin(np.deg2rad(t)) + x * np.cos(np.deg2rad(t)))
                     if -max_rho <= r < max_rho:
                         if t + max_theta - 1 >= 0:
-                            accumulator[r + max_rho][t + max_theta - 1] += 1
+                            accumulator[r + max_rho][t - 1] += 1
                         if r + max_rho - 1 >= 0:
-                            accumulator[r + max_rho - 1][t + max_theta] += 1
-                        if t + max_theta + 1 < 2 * max_theta:
-                            accumulator[r + max_rho][t + max_theta + 1] += 1
+                            accumulator[r + max_rho - 1][t] += 1
+                        if t + max_theta + 1 < max_theta:
+                            accumulator[r + max_rho][t + 1] += 1
                         if r + max_rho + 1 < 2 * max_rho:
-                            accumulator[r + max_rho + 1][t + max_theta] += 1
-                        accumulator[r + max_rho][t + max_theta] += 1
+                            accumulator[r + max_rho + 1][t] += 1
+                        accumulator[r + max_rho][t] += 1
     # θ和ρ的分布圖
     plt.figure(figsize=(10, 10))
-    plt.imshow(accumulator, cmap='hot', extent=[-max_theta, max_theta, -max_rho, max_rho],aspect='auto')
+    plt.imshow(accumulator, cmap='hot', extent=[0, max_theta, max_rho, -max_rho],aspect='auto')
     plt.title('accumulator')
     plt.xlabel('Theta (degrees)')
     plt.ylabel('Rho (pixels)')
@@ -107,11 +107,11 @@ def hough_lines(img,threshold):
     # 紀錄直線
     lines = []
     for r in range(2 * max_rho):
-        for t in range(2 * max_theta):
+        for t in range(max_theta):
             # 根據ϴρ點轉換回xy平面直線
             if accumulator[r][t] > threshold:
                 rho_val = r - max_rho
-                theta_val = t - max_theta
+                theta_val = t
                 x0 = rho_val * np.cos(np.deg2rad(theta_val))
                 y0 = rho_val * np.sin(np.deg2rad(theta_val))
                 # xcos(ϴ) + ysin(ϴ) = ρ -> (x + 10000(sin(ϴ))cos(ϴ)) + (y + 10000(-cos(ϴ))sin(ϴ)) = ρ 劃出直線
@@ -119,10 +119,10 @@ def hough_lines(img,threshold):
                 y1 = int(y0 + 10000 * np.cos(np.deg2rad(theta_val)))
                 x2 = int(x0 - 10000 * (-np.sin(np.deg2rad(theta_val))))
                 y2 = int(y0 - 10000 * np.cos(np.deg2rad(theta_val)))
-                lines.append(((x1, y1), (x2, y2)))
+                lines.append(((y1, x1), (y2, x2)))
     return lines
 canny_image = canny_edge_detector(image)
-lines = hough_lines(canny_image,400)
+lines = hough_lines(canny_image,250)
 hough_image = canny_image.copy()
 for line in lines:
     cv2.line(hough_image, line[0], line[1], (255, 255, 255), 2)
