@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-name = 'test5'
+name = 'pic3'
 sign = cv2.imread('sign.png', cv2.IMREAD_UNCHANGED)
-image = cv2.imread(f'{name}.png')
+image = cv2.imread(f'{name}.jpg')
 def canny_edge_detector(image): 
      # 先轉灰階
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)  
@@ -35,7 +35,7 @@ def canny_edge_detector(image):
                 if (i - 1 >= 0 and j - 1 >= 0 and image[i, j] > image[i - 1, j - 1]) and (i + 1 < image.shape[0] and j + 1 < image.shape[1] and image[i, j] > image[i + 1, j + 1]):
                     temp_image[i, j] = image[i, j]
     image = temp_image
-    # 雙門檻和連通成份分析 thresholding low 100 high 200
+    # 雙門檻和連通成份分析 thresholding low,high 
     low =  60
     high = 120
     # 連通成份分析
@@ -88,6 +88,7 @@ def hough_lines(img,threshold):
                 for t in range(0, max_theta + 1):
                     r = int(y * np.sin(np.deg2rad(t)) + x * np.cos(np.deg2rad(t)))
                     if -max_rho <= r < max_rho:
+                        # 別只投剛好的，附近也投
                         if t + max_theta - 1 >= 0:
                             accumulator[r + max_rho][t - 1] += 1
                         if r + max_rho - 1 >= 0:
@@ -122,10 +123,12 @@ def hough_lines(img,threshold):
                 lines.append(((y1, x1), (y2, x2)))
     return lines
 canny_image = canny_edge_detector(image)
-lines = hough_lines(canny_image,250)
+#pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
+lines = hough_lines(canny_image,300)
 hough_image = canny_image.copy()
 for line in lines:
     cv2.line(hough_image, line[0], line[1], (255, 255, 255), 2)
+# 將sign加到canny_image和hough_image，透明度不為0的部分加到圖片上
 for i in range(sign.shape[0]):
     for j in range(sign.shape[1]):
         if sign[i,j,3] != 0:
