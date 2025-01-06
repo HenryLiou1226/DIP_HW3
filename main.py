@@ -73,7 +73,7 @@ def canny_edge_detector(image):
 def hough_lines(img,threshold):
     # 圖形x,y平面大小
     height, width = img.shape[0], img.shape[1]
-    # p的最長值為最長邊長根號2 cos(45) + sin(45) = 1/根號2
+    # p的最長值為最長邊長根號2 cos(45) + sin(45) = 2*(1/根號2)
     p = int(max(height, width) * np.sqrt(2))
 
     # rho範圍為-p到p，θ範圍為0到180
@@ -83,7 +83,7 @@ def hough_lines(img,threshold):
     # 紀錄ρθ平面初始化為0的累加器 size = (2 * max_rho + 1)* (max_theta + 1) 
     accumulator = np.zeros((2 * max_rho + 1, max_theta + 1))
 
-    # 掃x,y平面，不為零的線畫0 < ϴ < 180的線，記錄到ρθ平面的點
+    # 掃x,y平面，不為零的點畫0 < ϴ < 180的線，記錄到ρθ平面的點
     for x in range(height):
         for y in range(width):
             if img[x][y] > 0:
