@@ -28,13 +28,13 @@ def canny_edge_detector(image):
                 if (j + 1 < image.shape[1] and image[i, j] > image[i, j + 1]) and (j - 1 >= 0 and image[i, j] > image[i, j - 1]):
                     temp_image[i, j] = image[i, j]
             elif (22.5 <= gradient[i, j] <= 67.5):
-                if (i - 1 >= 0 and j + 1 < image.shape[1] and image[i, j] > image[i - 1, j + 1]) and (i + 1 < image.shape[0] and j - 1 >= 0 and image[i, j] > image[i + 1, j - 1]):
+                if (i - 1 >= 0 and j - 1 >= 0 and image[i, j] > image[i - 1, j - 1]) and (i + 1 < image.shape[0] and j + 1 < image.shape[1] and image[i, j] > image[i + 1, j + 1]):
                     temp_image[i, j] = image[i, j]
             elif (67.5 < gradient[i, j] < 112.5):
                 if (i - 1 >= 0 and image[i, j] > image[i - 1, j]) and (i + 1 < image.shape[0] and image[i, j] > image[i + 1, j]):
                     temp_image[i, j] = image[i, j]
             elif (112.5 <= gradient[i, j] <= 157.5):
-                if (i - 1 >= 0 and j - 1 >= 0 and image[i, j] > image[i - 1, j - 1]) and (i + 1 < image.shape[0] and j + 1 < image.shape[1] and image[i, j] > image[i + 1, j + 1]):
+                if (i - 1 >= 0 and j + 1 < image.shape[1] and image[i, j] > image[i - 1, j + 1]) and (i + 1 < image.shape[0] and j - 1 >= 0 and image[i, j] > image[i + 1, j - 1]):
                     temp_image[i, j] = image[i, j]
     image = temp_image
     # 雙門檻和連通成份分析 thresholding low,high 
@@ -127,7 +127,7 @@ def hough_lines(img,threshold):
                 lines.append(((y1, x1), (y2, x2)))
     return lines
 canny_image = canny_edge_detector(image)
-# pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
+# pic 1 threshold = 400 pic 2 threshold = 600 pic 3 threshold = 300
 lines = hough_lines(canny_image,300)
 # copy一份canny_image來進行操作 直接a = b在python陣列中會變動到原本的陣列
 hough_image = canny_image.copy()
