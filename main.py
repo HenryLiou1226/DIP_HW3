@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-name = 'pic1'
+name = 'pic3'
 # 因為要讀透明層 所以unchanged 
 sign = cv2.imread('sign.png', cv2.IMREAD_UNCHANGED)
 image = cv2.imread(f'{name}.jpg')
@@ -95,9 +95,9 @@ def hough_lines(img,threshold):
                         accumulator[r + max_rho][t - 1] += 1
                     if r + max_rho - 1 >= 0:
                         accumulator[r + max_rho - 1][t] += 1
-                    if t + max_theta + 1 < max_theta:
+                    if t + max_theta + 1 <= max_theta:
                         accumulator[r + max_rho][t + 1] += 1
-                    if r + max_rho + 1 < 2 * max_rho:
+                    if r + max_rho + 1 <= 2 * max_rho:
                         accumulator[r + max_rho + 1][t] += 1
                     accumulator[r + max_rho][t] += 1
     # θ和ρ的分布圖
@@ -128,7 +128,7 @@ def hough_lines(img,threshold):
     return lines
 canny_image = canny_edge_detector(image)
 # pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
-lines = hough_lines(canny_image,350)
+lines = hough_lines(canny_image,300)
 # copy一份canny_image來進行操作 直接a = b在python陣列中會變動到原本的陣列
 hough_image = canny_image.copy()
 for line in lines:
