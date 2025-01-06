@@ -3,21 +3,23 @@ import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
 name = 'pic3'
+# 因為要讀透明層 所以unchanged 
 sign = cv2.imread('sign.png', cv2.IMREAD_UNCHANGED)
 image = cv2.imread(f'{name}.jpg')
 def canny_edge_detector(image): 
      # 先轉灰階
     image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)  
-    # 高斯模糊化
+    # 5x5 高斯模糊化
     image = cv2.GaussianBlur(image, (5, 5), 0)
-    # 計算 Sobel X 和 Sobel Y
+    # 計算 Sobel X 和 Sobel Y 64F 因為可能會有負值
     sobelx = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
     sobely = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
     # 計算梯度幅值
     image = np.sqrt(sobelx**2 + sobely**2)
-    # 計算梯度方向 tan < 0 = tan + 180
+    # 計算梯度方向 arctan2 return 範圍[-π, π] tan < 0 = tan + 180  
     gradient = np.arctan2(sobely, sobelx) * 180 / np.pi
     gradient[gradient < 0] += 180
+    # 生成一個跟image大小相同的0陣列
     temp_image = np.zeros_like(image)
     # Non-maximum suppression
     for i in range(image.shape[0]):
@@ -52,6 +54,7 @@ def canny_edge_detector(image):
                 image[i, j] = low
     while queue:
         x, y = queue.popleft()
+        # 八連通
         for i in range(-1, 2):
             for j in range(-1, 2):
                 if x + i < 0 or x + i >= image.shape[0] or y + j < 0 or y + j >= image.shape[1]:
@@ -77,14 +80,14 @@ def hough_lines(img,threshold):
     max_rho = p
     max_theta = 180
 
-    # 紀錄ρθ平面的累加器
+    # 紀錄ρθ平面初始化為0的累加器 size = 2 * max_rho * (max_theta + 1) 
     accumulator = np.zeros((2 * max_rho, max_theta + 1))
 
-    # 掃x,y平面，不為零的線畫-90 < ϴ < 90的線，記錄到ρθ平面的點
+    # 掃x,y平面，不為零的線畫0 < ϴ < 180的線，記錄到ρθ平面的點
     for x in range(height):
         for y in range(width):
             if img[x][y] > 0:
-                # 若x,y平面為線，轉換到ρθ平面的點 -90 < ϴ < 90
+                # 若x,y平面為線，轉換到ρθ平面的點 0 < ϴ < 180
                 for t in range(0, max_theta + 1):
                     r = int(y * np.sin(np.deg2rad(t)) + x * np.cos(np.deg2rad(t)))
                     if -max_rho <= r < max_rho:
@@ -99,6 +102,7 @@ def hough_lines(img,threshold):
                             accumulator[r + max_rho + 1][t] += 1
                         accumulator[r + max_rho][t] += 1
     # θ和ρ的分布圖
+    # 10x10 auto -> 方形 hot -> 大小顏色不同區分
     plt.figure(figsize=(10, 10))
     plt.imshow(accumulator, cmap='hot', extent=[0, max_theta, max_rho, -max_rho],aspect='auto')
     plt.title('accumulator')
@@ -115,7 +119,8 @@ def hough_lines(img,threshold):
                 theta_val = t
                 x0 = rho_val * np.cos(np.deg2rad(theta_val))
                 y0 = rho_val * np.sin(np.deg2rad(theta_val))
-                # xcos(ϴ) + ysin(ϴ) = ρ -> (x + 10000(sin(ϴ))cos(ϴ)) + (y + 10000(-cos(ϴ))sin(ϴ)) = ρ 劃出直線
+                # xcos(ϴ) + ysin(ϴ) = ρ ->  p cos(ϴ) ^ 2 + p sin(ϴ) ^ 2 = ρ 
+                # (x + 10000(sin(ϴ))cos(ϴ)) + (y - 10000(-cos(ϴ))sin(ϴ)) = ρ 劃出直線
                 x1 = int(x0 + 10000 * (-np.sin(np.deg2rad(theta_val))))
                 y1 = int(y0 + 10000 * np.cos(np.deg2rad(theta_val)))
                 x2 = int(x0 - 10000 * (-np.sin(np.deg2rad(theta_val))))
@@ -123,10 +128,12 @@ def hough_lines(img,threshold):
                 lines.append(((y1, x1), (y2, x2)))
     return lines
 canny_image = canny_edge_detector(image)
-#pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
+# pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
 lines = hough_lines(canny_image,300)
+# copy一份canny_image來進行操作 直接a = b在python陣列中會變動到原本的陣列
 hough_image = canny_image.copy()
 for line in lines:
+    # 畫直線 (255, 255, 255)白色 2線寬
     cv2.line(hough_image, line[0], line[1], (255, 255, 255), 2)
 # 將sign加到canny_image和hough_image，透明度不為0的部分加到圖片上
 for i in range(sign.shape[0]):
