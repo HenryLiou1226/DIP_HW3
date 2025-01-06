@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-name = 'pic3'
+name = 'pic1'
 # 因為要讀透明層 所以unchanged 
 sign = cv2.imread('sign.png', cv2.IMREAD_UNCHANGED)
 image = cv2.imread(f'{name}.jpg')
@@ -80,8 +80,8 @@ def hough_lines(img,threshold):
     max_rho = p
     max_theta = 180
 
-    # 紀錄ρθ平面初始化為0的累加器 size = 2 * max_rho * (max_theta + 1) 
-    accumulator = np.zeros((2 * max_rho, max_theta + 1))
+    # 紀錄ρθ平面初始化為0的累加器 size = (2 * max_rho + 1)* (max_theta + 1) 
+    accumulator = np.zeros((2 * max_rho + 1, max_theta + 1))
 
     # 掃x,y平面，不為零的線畫0 < ϴ < 180的線，記錄到ρθ平面的點
     for x in range(height):
@@ -90,17 +90,16 @@ def hough_lines(img,threshold):
                 # 若x,y平面為線，轉換到ρθ平面的點 0 < ϴ < 180
                 for t in range(0, max_theta + 1):
                     r = int(y * np.sin(np.deg2rad(t)) + x * np.cos(np.deg2rad(t)))
-                    if -max_rho <= r < max_rho:
-                        # 別只投剛好的，附近也投
-                        if t + max_theta - 1 >= 0:
-                            accumulator[r + max_rho][t - 1] += 1
-                        if r + max_rho - 1 >= 0:
-                            accumulator[r + max_rho - 1][t] += 1
-                        if t + max_theta + 1 < max_theta:
-                            accumulator[r + max_rho][t + 1] += 1
-                        if r + max_rho + 1 < 2 * max_rho:
-                            accumulator[r + max_rho + 1][t] += 1
-                        accumulator[r + max_rho][t] += 1
+                    # 別只投剛好的，附近也投
+                    if t + max_theta - 1 >= 0:
+                        accumulator[r + max_rho][t - 1] += 1
+                    if r + max_rho - 1 >= 0:
+                        accumulator[r + max_rho - 1][t] += 1
+                    if t + max_theta + 1 < max_theta:
+                        accumulator[r + max_rho][t + 1] += 1
+                    if r + max_rho + 1 < 2 * max_rho:
+                        accumulator[r + max_rho + 1][t] += 1
+                    accumulator[r + max_rho][t] += 1
     # θ和ρ的分布圖
     # 10x10 auto -> 方形 hot -> 大小顏色不同區分
     plt.figure(figsize=(10, 10))
@@ -111,8 +110,8 @@ def hough_lines(img,threshold):
     plt.savefig(f'accumulator_{name}.png')
     # 紀錄直線
     lines = []
-    for r in range(2 * max_rho):
-        for t in range(max_theta):
+    for r in range(2 * max_rho + 1):
+        for t in range(max_theta + 1):
             # 根據ϴρ點轉換回xy平面直線
             if accumulator[r][t] > threshold:
                 rho_val = r - max_rho
@@ -129,7 +128,7 @@ def hough_lines(img,threshold):
     return lines
 canny_image = canny_edge_detector(image)
 # pic 1 threshold = 350 pic 2 threshold = 400 pic 3 threshold = 300
-lines = hough_lines(canny_image,300)
+lines = hough_lines(canny_image,350)
 # copy一份canny_image來進行操作 直接a = b在python陣列中會變動到原本的陣列
 hough_image = canny_image.copy()
 for line in lines:
